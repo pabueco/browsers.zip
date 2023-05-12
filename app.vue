@@ -1,0 +1,242 @@
+<script lang="ts" setup>
+import { uniqBy } from 'lodash-es'
+
+useHead({
+  htmlAttrs: {
+    class: 'dark'
+  }
+})
+const ucfirst = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
+
+const FETCH_RELEASES_COUNT = 100
+
+const CHROMIUM_PLATFORM_API_NAME: Record<string, string> = {
+  mac: 'Mac',
+  'mac-arm': 'Mac',
+  windows: 'Windows',
+  linux: 'Linux',
+  android: 'Android'
+}
+
+const CHROMIUM_PLATFORM_DIRNAME: Record<string, string> = {
+  mac: 'Mac',
+  'mac-arm': 'Mac_Arm',
+  windows: 'Win_x64',
+  linux: 'Linux_x64',
+  android: 'Android'
+}
+
+const CHROMIUM_PLATFORM_FILENAME: Record<string, string> = {
+  mac: 'chrome-mac.zip',
+  'mac-arm': 'chrome-mac.zip',
+  windows: 'chrome-win.zip',
+  linux: 'chrome-linux.zip',
+  android: 'chrome-android.zip'
+}
+
+const BROWSERS = ['Chromium'].map(b => ({
+  label: b,
+  value: b.toLocaleLowerCase()
+}))
+const browser = ref(BROWSERS[0].value)
+
+const PLATFORMS = [
+  {
+    label: 'Windows',
+    value: 'windows'
+  },
+  {
+    label: 'Mac',
+    value: 'mac'
+  },
+  {
+    label: 'Mac Arm',
+    value: 'mac-arm'
+  },
+  {
+    label: 'Linux',
+    value: 'linux'
+  },
+  {
+    label: 'Android',
+    value: 'android'
+  },
+]
+const platform = ref(PLATFORMS[0].value)
+
+const versions = ref<any[]>([])
+const version = ref()
+
+const CHANNELS = ['Stable', 'Beta', 'Dev', 'Canary'].map(b => ({
+  label: b,
+  value: b.toLocaleLowerCase()
+}))
+const channel = ref(CHANNELS[0].value)
+
+const isFetchingVersions = ref(false)
+const isLookingUp = ref(false)
+
+watch([browser, channel, platform], async () => {
+  isFetchingVersions.value = true
+
+  const data = {
+    browser: ucfirst(browser.value),
+    channel: ucfirst(channel.value),
+    platform: CHROMIUM_PLATFORM_API_NAME[platform.value]
+  }
+
+  version.value = null
+  versions.value = []
+
+  const res = await fetch(`https://chromiumdash.appspot.com/fetch_releases?channel=${data.channel}&platform=${data.platform}&num=${FETCH_RELEASES_COUNT}`)
+  const json = await res.json()
+
+  versions.value = uniqBy(json, 'chromium_main_branch_position')
+  version.value = versions.value[0].chromium_main_branch_position
+
+  isFetchingVersions.value = false
+}, {
+  // immediate: true
+})
+
+const buildChromiumLinks = (revision: number) => {
+  let platformFormatted = CHROMIUM_PLATFORM_DIRNAME[platform.value]
+  const base = `https://commondatastorage.googleapis.com/chromium-browser-snapshots/index.html?prefix=${platformFormatted}/${revision}/`
+
+  const zipUrl = `https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/${platformFormatted}%2F${revision}%2F${CHROMIUM_PLATFORM_FILENAME[platform.value]}?alt=media`
+
+  return {
+    directoryUrl: base,
+    zipUrl,
+  }
+}
+
+const findChromiumSnapshotRevision = async (version: number | string) => {
+  const startRevision = Number(version)
+  let revision = startRevision
+
+  const maxTries = 50
+  let tries = 0
+
+  const makeRequest = async (revision: number) => {
+    const checkUrl = `https://www.googleapis.com/storage/v1/b/chromium-browser-snapshots/o/${CHROMIUM_PLATFORM_DIRNAME[platform.value]}%2F${revision}%2F${CHROMIUM_PLATFORM_FILENAME[platform.value]}`
+    const res = await fetch(checkUrl, {
+      method: 'HEAD'
+    })
+    return res
+  }
+
+  while (tries < maxTries) {
+    const res = await makeRequest(revision)
+    if (res.status === 200) {
+      return revision
+    }
+    revision++
+    tries++
+  }
+
+  tries = 0
+  while (tries < maxTries) {
+    const res = await makeRequest(revision)
+    if (res.status === 200) {
+      return revision
+    }
+    revision--
+    tries++
+  }
+
+  throw new Error(`Could not find revision for version ${version}`)
+}
+
+const lookup = async () => {
+  isLookingUp.value = true
+  showResult.value = false
+  const revision = await findChromiumSnapshotRevision(version.value)
+  const links = buildChromiumLinks(revision)
+  console.log(revision, links)
+  result.value = {
+    revision,
+    ...links
+  }
+  isLookingUp.value = false
+  showResult.value = true
+
+  ElMessage({
+    message: 'Found matching version.',
+    type: 'success',
+  })
+}
+
+const showResult = ref(false)
+const result = ref<any>({
+  revision: '',
+  directoryUrl: '',
+  zipUrl: ''
+})
+</script>
+
+<template>
+  <div class="min-h-screen bg-gray-950 flex items-center">
+    <div class="mx-auto max-w-xl py-20">
+      <div class="mb-8">
+        <h1 class="font-bold text-5xl">Browser Download Tool</h1>
+      </div>
+      <div class="flex space-x-2 mb-8">
+        <el-select v-model="platform" placeholder="Select platform" size="large" filterable>
+          <el-option v-for="item in PLATFORMS" :key="item.value" :label="item.label" :value="item.value" />
+        </el-select>
+        <el-select v-model="browser" placeholder="Select browser" size="large" class="w-32 shrink-0">
+          <el-option v-for="item in BROWSERS" :key="item.value" :label="item.label" :value="item.value" />
+        </el-select>
+        <el-select v-model="channel" placeholder="Select channel" size="large" filterable class="w-24 shrink-0">
+          <el-option v-for="item in CHANNELS" :key="item.value" :label="item.label" :value="item.value" />
+        </el-select>
+        <el-select v-model="version" placeholder="Version" size="large" :loading="isFetchingVersions" filterable
+          :disabled="isFetchingVersions" class="w-28 shrink-0">
+          <el-option v-for="item in  versions " :key="item.version" :label="`${item.milestone}`"
+            :value="item.chromium_main_branch_position">
+            <!-- <div class="flex justify-between items-center">
+              <div>{{ item.milestone }}</div>
+              <div class="opacity-60">{{ item.version }}</div>
+            </div> -->
+          </el-option>
+        </el-select>
+        <div class="">
+          <el-button type="primary" size="large" @click="lookup"
+            :disabled="!browser || !channel || !platform || !version || isLookingUp">
+            Lookup
+          </el-button>
+        </div>
+      </div>
+
+      <el-collapse-transition>
+        <div v-if="showResult">
+          <div class="w-full rounded-xl border border-gray-800 p-8">
+            <div class="space-y-6">
+              <el-button tag="a" :href="result.zipUrl" target="_blank" type="primary" size="large" class="w-full">
+                Download
+              </el-button>
+
+              <div class="space-y-4 text-sm">
+                <div>
+                  <h5 class="font-bold">Download URL:</h5>
+                  <a :href="result.zipUrl" target="_blank" class="block text-gray-400 transition hover:text-gray-200">{{
+                    result.zipUrl
+                  }}</a>
+                </div>
+                <div>
+                  <h5 class="font-bold">Source URL:</h5>
+                  <a :href="result.directoryUrl" target="_blank"
+                    class="block text-gray-400 transition hover:text-gray-200">{{
+                      result.directoryUrl
+                    }}</a>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </el-collapse-transition>
+    </div>
+  </div>
+</template>
