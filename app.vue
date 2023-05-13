@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { uniqBy } from 'lodash-es'
+import { groupBy, uniqBy } from 'lodash-es'
 
 useHead({
   htmlAttrs: {
@@ -34,7 +34,7 @@ const CHROMIUM_PLATFORM_FILENAME: Record<string, string> = {
   android: 'chrome-android.zip'
 }
 
-const BROWSERS = ['Chromium'].map(b => ({
+const BROWSERS = ['Chromium', 'Firefox'].map(b => ({
   label: b,
   value: b.toLocaleLowerCase()
 }))
@@ -67,18 +67,69 @@ const platform = ref(PLATFORMS[0].value)
 const versions = ref<any[]>([])
 const version = ref()
 
-const CHANNELS = ['Stable', 'Beta', 'Dev', 'Canary'].map(b => ({
+const CHROMIUM_CHANNELS = ['Stable', 'Beta', 'Dev', 'Canary'].map(b => ({
   label: b,
   value: b.toLocaleLowerCase()
 }))
-const channel = ref(CHANNELS[0].value)
+const FIREFOX_CHANNELS = ['Stable', 'Nightly'].map(b => ({
+  label: b,
+  value: b.toLocaleLowerCase()
+}))
+const channels = computed(() => {
+  return browser.value === 'chromium' ? CHROMIUM_CHANNELS : FIREFOX_CHANNELS
+})
+const channel = ref(CHROMIUM_CHANNELS[0].value)
 
 const isFetchingVersions = ref(false)
 const isLookingUp = ref(false)
 
+watch(browser, () => {
+  channel.value = channels.value[0].value
+})
+
 watch([browser, channel, platform], async () => {
   isFetchingVersions.value = true
 
+  const action = {
+    chromium: async () => await fetchChromiumReleases(),
+    firefox: async () => await fetchFirefoxReleases()
+  }[browser.value] as any
+
+  versions.value = await action()
+
+  version.value = versions.value[0].value
+
+  isFetchingVersions.value = false
+}, {
+  // immediate: true
+})
+
+const fetchFirefoxReleases = async () => {
+  const res = await fetch('https://product-details.mozilla.org/1.0/all.json')
+  const json = await res.json()
+
+  const byCat = groupBy(Object.values(json.releases)
+    .filter((item: any) => item.product === 'firefox'), 'category')
+
+  console.log(byCat);
+
+  const byCatByVersion = Object.entries(byCat).map(([key, value]: any) => {
+    return [
+      key,
+      groupBy(value, x => x.version.split('.')[0])
+    ]
+  })
+
+  console.log(byCatByVersion);
+
+
+  // return .map(([key, value]: any) => ({
+  //     label: value.version,
+  //     value: value.version
+  //   }))
+}
+
+const fetchChromiumReleases = async () => {
   const data = {
     browser: ucfirst(browser.value),
     channel: ucfirst(channel.value),
@@ -91,13 +142,12 @@ watch([browser, channel, platform], async () => {
   const res = await fetch(`https://chromiumdash.appspot.com/fetch_releases?channel=${data.channel}&platform=${data.platform}&num=${FETCH_RELEASES_COUNT}`)
   const json = await res.json()
 
-  versions.value = uniqBy(json, 'chromium_main_branch_position')
-  version.value = versions.value[0].chromium_main_branch_position
-
-  isFetchingVersions.value = false
-}, {
-  // immediate: true
-})
+  return uniqBy(json, 'chromium_main_branch_position').map((v: any) => ({
+    ...v,
+    label: v.milestone,
+    value: v.chromium_main_branch_position
+  }))
+}
 
 const buildChromiumLinks = (revision: number) => {
   let platformFormatted = CHROMIUM_PLATFORM_DIRNAME[platform.value]
@@ -188,9 +238,11 @@ const result = ref<any>({
         <el-select v-model="browser" placeholder="Select browser" size="large" class="w-32 shrink-0">
           <el-option v-for="item in BROWSERS" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
+
         <el-select v-model="channel" placeholder="Select channel" size="large" filterable class="w-24 shrink-0">
-          <el-option v-for="item in CHANNELS" :key="item.value" :label="item.label" :value="item.value" />
+          <el-option v-for="item in channels" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
+
         <el-select v-model="version" placeholder="Version" size="large" :loading="isFetchingVersions" filterable
           :disabled="isFetchingVersions" class="w-28 shrink-0">
           <el-option v-for="item in  versions " :key="item.version" :label="`${item.milestone}`"
