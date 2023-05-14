@@ -12,10 +12,14 @@
     "@element-plus/nuxt": "^1.0.4",
     "@nuxtjs/tailwindcss": "^6.6.8",
     "@types/node": "^18",
+    "@vueuse/core": "^10.1.2",
+    "@vueuse/nuxt": "^10.1.2",
     "element-plus": "^2.3.4",
     "nuxt": "^3.4.3"
   },
   "dependencies": {
+    "compare-versions": "6.0.0-rc.1",
+    "detector-js": "^2.0.3",
     "lodash-es": "^4.17.21",
     "sass": "^1.62.1"
   }

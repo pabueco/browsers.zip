@@ -1,10 +1,11 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  modules: ["@nuxtjs/tailwindcss", "@element-plus/nuxt"],
+  modules: ["@nuxtjs/tailwindcss", "@element-plus/nuxt", "@vueuse/nuxt"],
   elementPlus: {
     themes: ["dark"],
     importStyle: "scss",
   },
+  ssr: false,
 
   vite: {
     css: {
