@@ -93,6 +93,9 @@ const BROWSER_OPTIONS = BROWSERS.map((b) => ({
   value: b,
 }));
 const browser = ref(BROWSERS[0]);
+const selectedBrowser = computed(() => {
+  return BROWSER_OPTIONS.find((b) => b.value === browser.value);
+});
 
 const PLATFORMS = [
   {
@@ -121,6 +124,13 @@ const platform = ref(PLATFORMS[0].value);
 
 const versions = ref<any[]>([]);
 const version = ref();
+const selectedVersion = computed(() => {
+  return versions.value.find((v) => v.value === version.value);
+});
+
+const versionDisplay = computed(() => {
+  return selectedVersion.value?.label;
+});
 
 const CHROMIUM_CHANNELS = ["Stable", "Beta", "Dev", "Canary"].map((b) => ({
   label: b,
@@ -151,6 +161,10 @@ watch(
   [browser, channel, platform],
   async () => {
     isFetchingVersions.value = true;
+    showResult.value = false;
+
+    version.value = null;
+    versions.value = [];
 
     const action = {
       chromium: async () => await fetchChromiumReleases(),
@@ -401,8 +415,8 @@ const displayedVersions = computed(() => {
           class="w-28 shrink-0"
         >
           <el-option
-            v-for="item in displayedVersions"
-            :key="item.version"
+            v-for="(item, i) in displayedVersions"
+            :key="i"
             :label="item.label"
             :value="item.value"
           >
@@ -430,6 +444,10 @@ const displayedVersions = computed(() => {
         <div v-if="showResult">
           <div class="w-full rounded-xl border border-gray-800 p-8">
             <div class="space-y-6">
+              <h class="font-bold text-2xl"
+                >{{ selectedBrowser?.label }} {{ versionDisplay }}</h
+              >
+
               <el-button
                 tag="a"
                 :href="result.downloadUrl"
