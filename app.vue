@@ -1,13 +1,29 @@
 <script lang="ts" setup>
 import { groupBy, last, mapValues, uniqBy } from "lodash-es";
 import { Detector } from "detector-js";
+import dayjs from "dayjs";
+import { types } from "sass";
 
 useHead({
   htmlAttrs: {
     class: "dark",
   },
 });
-const ucfirst = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
+const ucfirst = (str: string | undefined) =>
+  str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
+
+const $fetchWithCache = async <T>(url: string) => {
+  const cacheKey = `fetch:${url}`;
+  const cached = localStorage.getItem(cacheKey);
+
+  if (cached) {
+    return JSON.parse(cached) as T;
+  }
+
+  const result = await $fetch<T>(url);
+  localStorage.setItem(cacheKey, JSON.stringify(result));
+  return result;
+};
 
 const getCurrentPlatform = () => {
   const detector = new Detector();
@@ -53,7 +69,14 @@ type ChromiumRelease = {
   previous_version: string;
 };
 
-const FETCH_RELEASES_COUNT = 100;
+type Version = {
+  label: string;
+  value: string;
+  date: dayjs.Dayjs;
+  fullVersion: string;
+};
+
+const FETCH_RELEASES_COUNT = 150;
 
 const CHROMIUM_PLATFORM_API_NAME: Record<string, string> = {
   mac: "Mac",
@@ -87,12 +110,12 @@ const FIREFOX_PLATFORM_DIRNAME: Record<string, string> = {
   android: "android-x86_64",
 };
 
-const BROWSERS = ["chromium", "firefox"];
+const BROWSERS = ["chromium", "firefox"] as const;
 const BROWSER_OPTIONS = BROWSERS.map((b) => ({
   label: ucfirst(b),
   value: b,
 }));
-const browser = ref(BROWSERS[0]);
+const browser = ref<(typeof BROWSERS)[number]>();
 const selectedBrowser = computed(() => {
   return BROWSER_OPTIONS.find((b) => b.value === browser.value);
 });
@@ -103,11 +126,11 @@ const PLATFORMS = [
     value: "windows",
   },
   {
-    label: "Mac",
+    label: "Mac (Intel)",
     value: "mac",
   },
   {
-    label: "Mac Arm",
+    label: "Mac (Apple Silicon)",
     value: "mac-arm",
   },
   {
@@ -120,16 +143,16 @@ const PLATFORMS = [
   // },
 ];
 
-const platform = ref(PLATFORMS[0].value);
+const platform = ref(getCurrentPlatform());
 
-const versions = ref<any[]>([]);
-const version = ref();
+const versions = ref<Version[]>([]);
+const version = ref<Version["value"] | null>(null);
 const selectedVersion = computed(() => {
   return versions.value.find((v) => v.value === version.value);
 });
 
 const versionDisplay = computed(() => {
-  return selectedVersion.value?.label;
+  return selectedVersion.value?.fullVersion;
 });
 
 const CHROMIUM_CHANNELS = ["Stable", "Beta", "Dev", "Canary"].map((b) => ({
@@ -157,6 +180,10 @@ watch(browser, () => {
   channel.value = channels.value[0].value;
 });
 
+watch(version, () => {
+  showResult.value = false;
+});
+
 watch(
   [browser, channel, platform],
   async () => {
@@ -166,10 +193,12 @@ watch(
     version.value = null;
     versions.value = [];
 
+    if (!browser.value) return;
+
     const action = {
       chromium: async () => await fetchChromiumReleases(),
       firefox: async () => await fetchFirefoxReleases(),
-    }[browser.value] as any;
+    }[browser.value];
 
     versions.value = await action();
 
@@ -183,21 +212,19 @@ watch(
 );
 
 let firefoxReleases: {
-  [key: string]: Record<string, any>;
+  [key: string]: FirefoxRelease[];
 };
-const fetchFirefoxReleases = async () => {
+const fetchFirefoxReleases = async (): Promise<Version[]> => {
   let data = firefoxReleases;
 
   if (!data) {
-    const { releases } = await $fetch<{
+    const { releases } = await $fetchWithCache<{
       releases: Record<string, FirefoxRelease>;
     }>("https://product-details.mozilla.org/1.0/all.json");
 
     const byCatByVersion = mapValues(
       groupBy(
-        Object.values(releases).filter(
-          (item: any) => item.product === "firefox"
-        ),
+        Object.values(releases).filter((item) => item.product === "firefox"),
         "category"
       ),
       (items) =>
@@ -214,7 +241,7 @@ const fetchFirefoxReleases = async () => {
             );
           }
         )
-    );
+    ) as Record<string, Record<string, FirefoxRelease>>;
 
     data = {
       stable: Object.values(byCatByVersion.stability),
@@ -225,14 +252,20 @@ const fetchFirefoxReleases = async () => {
   }
 
   return data[channel.value as any]
-    ?.map((item: any) => ({
-      label: item.version,
+    ?.map((item) => ({
+      label: item.version.split(".")[0],
       value: item.version,
+      date: dayjs(item.date),
+      fullVersion: item.version,
     }))
     .reverse();
 };
 
-const fetchChromiumReleases = async () => {
+let chromiumMilestones: {
+  milestone: number;
+  chromium_main_branch_position: number;
+}[] = [];
+const fetchChromiumReleases = async (): Promise<Version[]> => {
   const data = {
     browser: ucfirst(browser.value),
     channel: ucfirst(channel.value),
@@ -242,16 +275,31 @@ const fetchChromiumReleases = async () => {
   version.value = null;
   versions.value = [];
 
-  const responseData = await $fetch<ChromiumRelease[]>(
+  if (!chromiumMilestones.length) {
+    chromiumMilestones = await $fetchWithCache(
+      "https://chromiumdash.appspot.com/fetch_milestones?only_branched=true"
+    );
+  }
+
+  const responseData = await $fetchWithCache<ChromiumRelease[]>(
     `https://chromiumdash.appspot.com/fetch_releases?channel=${data.channel}&platform=${data.platform}&num=${FETCH_RELEASES_COUNT}`
   );
 
-  return uniqBy(responseData, "chromium_main_branch_position").map(
-    (v: any) => ({
-      ...v,
-      label: v.milestone,
-      value: v.chromium_main_branch_position,
-    })
+  return uniqBy(
+    responseData
+      .map((v) => ({
+        label: v.milestone.toString(),
+        value:
+          v.chromium_main_branch_position?.toString() ||
+          chromiumMilestones
+            .find((m) => m.milestone === v.milestone)
+            ?.chromium_main_branch_position?.toString() ||
+          "",
+        date: dayjs.unix(v.time / 1000),
+        fullVersion: v.version,
+      }))
+      .filter((v) => !!v.value),
+    "value"
   );
 };
 
@@ -312,6 +360,14 @@ const lookup = async () => {
   isLookingUp.value = true;
   showResult.value = false;
 
+  if (!version.value) {
+    ElMessage({
+      message: "Please select a version.",
+      type: "error",
+    });
+    return;
+  }
+
   switch (browser.value) {
     case "chromium":
       const revision = await findChromiumSnapshotRevision(version.value);
@@ -358,16 +414,17 @@ const displayedVersions = computed(() => {
 
 <template>
   <div class="min-h-screen bg-gray-950 flex items-center">
-    <div class="mx-auto max-w-xl py-20">
+    <div class="mx-auto max-w-md w-full py-20">
       <div class="mb-8">
-        <h1 class="font-bold text-5xl">Browser Download Tool</h1>
+        <h1 class="font-bold text-4xl">Browser Download Tool</h1>
       </div>
-      <div class="flex space-x-2 mb-8">
+      <div class="grid gap-3 grid-cols-2 mb-10">
         <el-select
           v-model="platform"
           placeholder="Select platform"
           size="large"
           filterable
+          class="relative z-10"
         >
           <el-option
             v-for="item in PLATFORMS"
@@ -378,9 +435,9 @@ const displayedVersions = computed(() => {
         </el-select>
         <el-select
           v-model="browser"
-          placeholder="Select browser"
+          placeholder="Browser"
           size="large"
-          class="w-32 shrink-0"
+          class="relative z-10"
         >
           <el-option
             v-for="item in BROWSER_OPTIONS"
@@ -395,7 +452,6 @@ const displayedVersions = computed(() => {
           placeholder="Select channel"
           size="large"
           filterable
-          class="w-24 shrink-0"
         >
           <el-option
             v-for="item in channels"
@@ -406,34 +462,37 @@ const displayedVersions = computed(() => {
         </el-select>
 
         <el-select
-          v-model="version"
+          v-model="(version as any)"
           placeholder="Version"
           size="large"
           :loading="isFetchingVersions"
           filterable
-          :disabled="isFetchingVersions"
-          class="w-28 shrink-0"
+          :disabled="isFetchingVersions || !browser"
         >
           <el-option
             v-for="(item, i) in displayedVersions"
             :key="i"
-            :label="item.label"
+            :label="`${item.label} (${item.date
+              .toDate()
+              .toLocaleDateString()})`"
             :value="item.value"
           >
-            <!-- <div class="flex justify-between items-center">
-              <div>{{ item.milestone }}</div>
-              <div class="opacity-60">{{ item.version }}</div>
-            </div> -->
+            <div class="flex justify-between items-center">
+              <div>{{ item.label }}</div>
+              <div class="opacity-40">
+                {{ item.date.toDate().toLocaleDateString() }}
+              </div>
+            </div>
           </el-option>
         </el-select>
-        <div class="">
+        <div class="w-full col-span-2">
           <el-button
             type="primary"
             size="large"
             @click="lookup"
-            :disabled="
-              !browser || !channel || !platform || !version || isLookingUp
-            "
+            class="w-full"
+            :disabled="!browser || !channel || !platform || !version"
+            :loading="isLookingUp"
           >
             Lookup
           </el-button>
@@ -442,11 +501,19 @@ const displayedVersions = computed(() => {
 
       <el-collapse-transition>
         <div v-if="showResult">
-          <div class="w-full rounded-xl border border-gray-800 p-8">
+          <div
+            class="w-full rounded-xl border border-primary-600 p-8 bg-gradient-to-br from-primary-600/[0.15] to-primary-600/[0.01]"
+          >
             <div class="space-y-6">
-              <h class="font-bold text-2xl"
-                >{{ selectedBrowser?.label }} {{ versionDisplay }}</h
-              >
+              <div>
+                <h2 class="font-bold text-2xl">
+                  {{ selectedBrowser?.label }} {{ versionDisplay }}
+                </h2>
+                <p class="opacity-50 text-sm mt-1">
+                  Release:
+                  {{ selectedVersion?.date.toDate().toLocaleDateString() }}
+                </p>
+              </div>
 
               <el-button
                 tag="a"
