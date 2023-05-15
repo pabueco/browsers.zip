@@ -435,7 +435,7 @@ const displayedVersions = computed(() => {
         </el-select>
         <el-select
           v-model="browser"
-          placeholder="Browser"
+          placeholder="Select browser"
           size="large"
           class="relative z-10"
         >
@@ -463,7 +463,7 @@ const displayedVersions = computed(() => {
 
         <el-select
           v-model="(version as any)"
-          placeholder="Version"
+          placeholder="Select version"
           size="large"
           :loading="isFetchingVersions"
           filterable
