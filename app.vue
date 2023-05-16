@@ -375,7 +375,7 @@ const lookup = async () => {
         const revision = await findChromiumSnapshotRevision(version.value);
         const links = buildChromiumLinks(revision);
         result.value = {
-          revision,
+            revision,
           ...links,
         };
       } catch (error) {
@@ -386,15 +386,30 @@ const lookup = async () => {
       }
       break;
     case "firefox":
-      const url = `https://ftp.mozilla.org/pub/firefox/releases/${
+      let url = `https://ftp.mozilla.org/pub/firefox/releases/${
         version.value
       }/${FIREFOX_PLATFORM_DIRNAME[platform.value]}/${
         languages.value[0] ?? "en-US"
       }/`;
+
+      // Older versions don't have win64 builds
+      const { ok } = await $fetch<{ ok: boolean }>('/api/ok', {
+        method: 'POST',
+        body: {
+          url
+        }
+      })
+
+      if (!ok) {
+        url = url.replace('win64', 'win32')
+      }
+
+      const downloadUrl = `${url}Firefox Setup ${version.value}.exe`;
+
       result.value = {
         revision: version.value,
         directoryUrl: url,
-        downloadUrl: `${url}Firefox Setup ${version.value}.exe`,
+        downloadUrl,
       };
       break;
   }
