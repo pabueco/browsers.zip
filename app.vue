@@ -359,6 +359,7 @@ const findChromiumSnapshotRevision = async (version: number | string) => {
 const lookup = async () => {
   isLookingUp.value = true;
   showResult.value = false;
+  result.value = null;
 
   if (!version.value) {
     ElMessage({
@@ -370,12 +371,19 @@ const lookup = async () => {
 
   switch (browser.value) {
     case "chromium":
-      const revision = await findChromiumSnapshotRevision(version.value);
-      const links = buildChromiumLinks(revision);
-      result.value = {
-        revision,
-        ...links,
-      };
+      try {
+        const revision = await findChromiumSnapshotRevision(version.value);
+        const links = buildChromiumLinks(revision);
+        result.value = {
+          revision,
+          ...links,
+        };
+      } catch (error) {
+        ElMessage({
+          message: `Could not find chromium revision for version ${version.value}.`,
+          type: "error",
+        });
+      }
       break;
     case "firefox":
       const url = `https://ftp.mozilla.org/pub/firefox/releases/${
@@ -390,14 +398,17 @@ const lookup = async () => {
       };
       break;
   }
-
+  
   isLookingUp.value = false;
-  showResult.value = true;
 
-  ElMessage({
-    message: "Found matching version.",
-    type: "success",
-  });
+  if (result.value) {
+    showResult.value = true;
+
+    ElMessage({
+      message: "Found matching version.",
+      type: "success",
+    });
+  }
 };
 
 const showResult = ref(false);
