@@ -2,9 +2,12 @@
 import { groupBy, last, mapValues, uniqBy } from "lodash-es";
 import { Detector } from "detector-js";
 import dayjs from "dayjs";
-import { types } from "sass";
 
 useHead({
+  title: "Browser Download Tool",
+  meta: [
+    { name: "description", content: "Easily download any version of chromium or firefox directly from the source." }
+  ],
   htmlAttrs: {
     class: "dark",
   },
