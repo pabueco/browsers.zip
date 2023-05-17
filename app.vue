@@ -2,6 +2,7 @@
 import { groupBy, last, mapValues, uniqBy } from "lodash-es";
 import { Detector } from "detector-js";
 import dayjs from "dayjs";
+import './assets/index.scss'
 
 useHead({
   title: "Browser Download Tool",
@@ -9,7 +10,7 @@ useHead({
     { name: "description", content: "Easily download any version of chromium or firefox directly from the source." }
   ],
   htmlAttrs: {
-    class: "dark",
+    class: "dark font-mono",
   },
 });
 const ucfirst = (str: string | undefined) =>
@@ -79,7 +80,7 @@ type Version = {
   fullVersion: string;
 };
 
-const FETCH_RELEASES_COUNT = 150;
+const FETCH_RELEASES_COUNT = 250;
 
 const CHROMIUM_PLATFORM_API_NAME: Record<string, string> = {
   mac: "Mac",
@@ -443,9 +444,10 @@ const displayedVersions = computed(() => {
 
 <template>
   <div class="min-h-screen bg-gray-950 flex items-center">
-    <div class="mx-auto max-w-md w-full py-20">
+    <div class="mx-auto max-w-md w-full py-20 px-5">
       <div class="mb-8">
-        <h1 class="font-bold text-4xl">Browser Download Tool</h1>
+        <h1 class="font-bold text-3xl text-left mb-2">Browser Download Tool</h1>
+        <p class="text-gray-400 text-sm pr-10">Easily download any version of Chromium or Firefox directly from the source.</p>
       </div>
       <div class="grid gap-3 grid-cols-2 mb-10">
         <el-select
@@ -535,7 +537,7 @@ const displayedVersions = computed(() => {
           >
             <div class="space-y-6">
               <div>
-                <h2 class="font-bold text-2xl">
+                <h2 class="font-bold text-xl">
                   {{ selectedBrowser?.label }} {{ versionDisplay }}
                 </h2>
                 <p class="opacity-50 text-sm mt-1">
@@ -555,9 +557,9 @@ const displayedVersions = computed(() => {
                 Download
               </el-button>
 
-              <div class="space-y-4 text-sm">
+              <div class="space-y-4 text-sm !mt-8">
                 <div>
-                  <h5 class="font-bold">Download URL:</h5>
+                  <h5 class="font-semibold mb-1">Download:</h5>
                   <a
                     :href="result.downloadUrl"
                     target="_blank"
@@ -566,7 +568,7 @@ const displayedVersions = computed(() => {
                   >
                 </div>
                 <div>
-                  <h5 class="font-bold">Source URL:</h5>
+                  <h5 class="font-semibold mb-1">Source:</h5>
                   <a
                     :href="result.directoryUrl"
                     target="_blank"
