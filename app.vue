@@ -2,12 +2,16 @@
 import { groupBy, last, mapValues, uniqBy } from "lodash-es";
 import { Detector } from "detector-js";
 import dayjs from "dayjs";
-import './assets/index.scss'
+import "./assets/index.scss";
 
 useHead({
   title: "Browser Download Tool",
   meta: [
-    { name: "description", content: "Easily download any version of chromium or firefox directly from the source." }
+    {
+      name: "description",
+      content:
+        "Easily download any version of chromium or firefox directly from the source.",
+    },
   ],
   htmlAttrs: {
     class: "dark font-mono",
@@ -379,7 +383,7 @@ const lookup = async () => {
         const revision = await findChromiumSnapshotRevision(version.value);
         const links = buildChromiumLinks(revision);
         result.value = {
-            revision,
+          revision,
           ...links,
         };
       } catch (error) {
@@ -397,15 +401,15 @@ const lookup = async () => {
       }/`;
 
       // Older versions don't have win64 builds
-      const { ok } = await $fetch<{ ok: boolean }>('/api/ok', {
-        method: 'POST',
+      const { ok } = await $fetch<{ ok: boolean }>("/api/ok", {
+        method: "POST",
         body: {
-          url
-        }
-      })
+          url,
+        },
+      });
 
       if (!ok) {
-        url = url.replace('win64', 'win32')
+        url = url.replace("win64", "win32");
       }
 
       const downloadUrl = `${url}Firefox Setup ${version.value}.exe`;
@@ -417,7 +421,7 @@ const lookup = async () => {
       };
       break;
   }
-  
+
   isLookingUp.value = false;
 
   if (result.value) {
@@ -447,7 +451,10 @@ const displayedVersions = computed(() => {
     <div class="mx-auto max-w-md w-full py-20 px-5">
       <div class="mb-8">
         <h1 class="font-bold text-3xl text-left mb-2">Browser Download Tool</h1>
-        <p class="text-gray-400 text-sm pr-10">Easily download any version of Chromium or Firefox directly from the source.</p>
+        <p class="text-gray-400 text-sm pr-10">
+          Easily download any version of Chromium or Firefox directly from the
+          source.
+        </p>
       </div>
       <div class="grid gap-3 grid-cols-2 mb-10">
         <el-select
@@ -581,6 +588,13 @@ const displayedVersions = computed(() => {
           </div>
         </div>
       </el-collapse-transition>
+
+      <div
+        :class="{ 'opacity-0': !isFetchingVersions }"
+        class="text-xs text-gray-500 col-span-2 mt-2 transition duration-200"
+      >
+        Loading versions. This can take a few seconds...
+      </div>
     </div>
   </div>
 </template>
