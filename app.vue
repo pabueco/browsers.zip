@@ -150,7 +150,7 @@ const PLATFORMS = [
 const platform = ref(getCurrentPlatform());
 
 const versions = ref<Version[]>([]);
-const version = ref<Version["value"] | null>(null);
+const version = ref<Version["value"]>();
 const selectedVersion = computed(() => {
   return versions.value.find((v) => v.value === version.value);
 });
@@ -194,7 +194,7 @@ watch(
     isFetchingVersions.value = true;
     showResult.value = false;
 
-    version.value = null;
+    version.value = undefined;
     versions.value = [];
 
     if (!browser.value) return;
@@ -276,7 +276,7 @@ const fetchChromiumReleases = async (): Promise<Version[]> => {
     platform: CHROMIUM_PLATFORM_API_NAME[platform.value],
   };
 
-  version.value = null;
+  version.value = undefined;
   versions.value = [];
 
   if (!chromiumMilestones.length) {
@@ -493,7 +493,7 @@ const displayedVersions = computed(() => {
         </el-select>
 
         <el-select
-          v-model="(version as any)"
+          v-model="version"
           placeholder="Select version"
           size="large"
           :loading="isFetchingVersions"
