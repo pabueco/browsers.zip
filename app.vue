@@ -21,6 +21,10 @@ const ucfirst = (str: string | undefined) =>
   str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
 
 const $fetchWithCache = async <T>(url: string) => {
+  if (process.env.NODE_ENV !== "development") {
+    return await $fetch<T>(url);
+  }
+
   const cacheKey = `fetch:${url}`;
   const cached = localStorage.getItem(cacheKey);
 
