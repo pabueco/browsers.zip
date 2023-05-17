@@ -574,7 +574,7 @@ const displayedVersions = computed(() => {
                   <a
                     :href="result.downloadUrl"
                     target="_blank"
-                    class="block text-gray-400 transition hover:text-gray-200"
+                    class="block text-gray-400 transition hover:text-gray-200 break-words"
                     >{{ result.downloadUrl }}</a
                   >
                 </div>
@@ -583,7 +583,7 @@ const displayedVersions = computed(() => {
                   <a
                     :href="result.directoryUrl"
                     target="_blank"
-                    class="block text-gray-400 transition hover:text-gray-200"
+                    class="block text-gray-400 transition hover:text-gray-200 break-words"
                     >{{ result.directoryUrl }}</a
                   >
                 </div>
