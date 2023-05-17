@@ -452,7 +452,7 @@ const displayedVersions = computed(() => {
 
 <template>
   <div class="min-h-screen bg-gray-950 flex items-center">
-    <div class="mx-auto max-w-md w-full py-20 px-5">
+    <div class="mx-auto max-w-lg w-full py-20 px-5">
       <div class="mb-8">
         <h1 class="font-bold text-3xl text-left mb-2">Browser Download Tool</h1>
         <p class="text-gray-400 text-sm pr-10">
