@@ -16,6 +16,12 @@ useHead({
   htmlAttrs: {
     class: "dark font-mono",
   },
+  script: [
+    {
+      src: "https://reasonable.pabue.workers.dev/js/script.js",
+      "data-domain": "browsers.zip"
+    }
+  ]
 });
 const ucfirst = (str: string | undefined) =>
   str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
