@@ -1,8 +1,11 @@
 <script lang="ts" setup>
 import { groupBy, last, mapValues, uniqBy } from "lodash-es";
-import { Detector } from "detector-js";
 import dayjs from "dayjs";
 import "./assets/index.scss";
+import { Version, FirefoxRelease, ChromiumRelease } from "./types";
+
+const CHROMIUM_FETCH_RELEASES_COUNT = 250;
+const CHROMIUM_FIND_REVISION_MAX_ATTMEPTS = 50;
 
 useHead({
   title: "Browser Download Tool",
@@ -19,149 +22,21 @@ useHead({
   script: [
     {
       src: "https://reasonable.pabue.workers.dev/js/script.js",
-      "data-domain": "browsers.zip"
-    }
-  ]
+      "data-domain": "browsers.zip",
+    },
+  ],
 });
-const ucfirst = (str: string | undefined) =>
-  str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
 
-const $fetchWithCache = async <T>(url: string) => {
-  if (process.env.NODE_ENV !== "development") {
-    return await $fetch<T>(url);
-  }
-
-  const cacheKey = `fetch:${url}`;
-  const cached = localStorage.getItem(cacheKey);
-
-  if (cached) {
-    return JSON.parse(cached) as T;
-  }
-
-  const result = await $fetch<T>(url);
-  localStorage.setItem(cacheKey, JSON.stringify(result));
-  return result;
-};
-
-const getCurrentPlatform = () => {
-  const detector = new Detector();
-
-  const osName = (detector.os as any).name.toLocaleLowerCase();
-
-  if (osName.includes("windows")) {
-    return "windows";
-  }
-
-  if (osName.includes("linux")) {
-    return "mac";
-  }
-
-  if (osName.includes("mac")) {
-    return (detector.cpu as any).platform?.includes("intel")
-      ? "mac"
-      : "mac-arm";
-  }
-
-  return PLATFORMS[0].value;
-};
 const languages = usePreferredLanguages();
 
-type FirefoxRelease = {
-  build_number: number;
-  category: "dev" | "stability" | "esr";
-  date: string;
-  description: null | string;
-  is_security_driven: boolean;
-  product: "devedition" | "firefox";
-  version: string;
-};
-
-type ChromiumRelease = {
-  channel: (typeof CHROMIUM_CHANNELS)[number]["value"];
-  chromium_main_branch_position: number;
-  hashes: Record<string, string>;
-  milestone: number;
-  platform: (typeof PLATFORMS)[number]["value"];
-  time: number;
-  version: string;
-  previous_version: string;
-};
-
-type Version = {
-  label: string;
-  value: string;
-  date: dayjs.Dayjs;
-  fullVersion: string;
-};
-
-const FETCH_RELEASES_COUNT = 250;
-
-const CHROMIUM_PLATFORM_API_NAME: Record<string, string> = {
-  mac: "Mac",
-  "mac-arm": "Mac",
-  windows: "Windows",
-  linux: "Linux",
-  android: "Android",
-};
-
-const CHROMIUM_PLATFORM_DIRNAME: Record<string, string> = {
-  mac: "Mac",
-  "mac-arm": "Mac_Arm",
-  windows: "Win_x64",
-  linux: "Linux_x64",
-  // android: "Android",
-};
-
-const CHROMIUM_PLATFORM_FILENAME: Record<string, string> = {
-  mac: "chrome-mac.zip",
-  "mac-arm": "chrome-mac.zip",
-  windows: "chrome-win.zip",
-  linux: "chrome-linux.zip",
-  // android: "chrome-android.zip",
-};
-
-const FIREFOX_PLATFORM_DIRNAME: Record<string, string> = {
-  mac: "mac",
-  "mac-arm": "mac",
-  windows: "win64",
-  linux: "linux-x86_64",
-  android: "android-x86_64",
-};
-
-const BROWSERS = ["chromium", "firefox"] as const;
-const BROWSER_OPTIONS = BROWSERS.map((b) => ({
-  label: ucfirst(b),
-  value: b,
-}));
 const browser = ref<(typeof BROWSERS)[number]>();
 const selectedBrowser = computed(() => {
   return BROWSER_OPTIONS.find((b) => b.value === browser.value);
 });
-
-const PLATFORMS = [
-  {
-    label: "Windows",
-    value: "windows",
-  },
-  {
-    label: "Mac (Intel)",
-    value: "mac",
-  },
-  {
-    label: "Mac (Apple Silicon)",
-    value: "mac-arm",
-  },
-  {
-    label: "Linux",
-    value: "linux",
-  },
-  // {
-  //   label: "Android",
-  //   value: "android",
-  // },
-];
+const browserOptions = computed(() => BROWSER_OPTIONS);
 
 const platform = ref(getCurrentPlatform());
+const platformOptions = computed(() => PLATFORMS);
 
 const versions = ref<Version[]>([]);
 const version = ref<Version["value"]>();
@@ -173,22 +48,10 @@ const versionDisplay = computed(() => {
   return selectedVersion.value?.fullVersion;
 });
 
-const CHROMIUM_CHANNELS = ["Stable", "Beta", "Dev", "Canary"].map((b) => ({
-  label: b,
-  value: b.toLocaleLowerCase(),
-}));
-const FIREFOX_CHANNELS = [
-  "Stable",
-  "Dev",
-  "ESR",
-  // "Nighly"
-].map((b) => ({
-  label: b,
-  value: b.toLocaleLowerCase(),
-}));
 const channels = computed(() => {
   return browser.value === "chromium" ? CHROMIUM_CHANNELS : FIREFOX_CHANNELS;
 });
+
 const channel = ref(CHROMIUM_CHANNELS[0].value);
 
 const isFetchingVersions = ref(false);
@@ -300,7 +163,7 @@ const fetchChromiumReleases = async (): Promise<Version[]> => {
   }
 
   const responseData = await $fetchWithCache<ChromiumRelease[]>(
-    `https://chromiumdash.appspot.com/fetch_releases?channel=${data.channel}&platform=${data.platform}&num=${FETCH_RELEASES_COUNT}`
+    `https://chromiumdash.appspot.com/fetch_releases?channel=${data.channel}&platform=${data.platform}&num=${CHROMIUM_FETCH_RELEASES_COUNT}`
   );
 
   return uniqBy(
@@ -338,9 +201,7 @@ const buildChromiumLinks = (revision: number) => {
 const findChromiumSnapshotRevision = async (version: number | string) => {
   const startRevision = Number(version);
   let revision = startRevision;
-
-  const maxTries = 50;
-  let tries = 0;
+  let attempts = 0;
 
   const makeRequest = async (revision: number) => {
     const checkUrl = `https://www.googleapis.com/storage/v1/b/chromium-browser-snapshots/o/${
@@ -352,23 +213,23 @@ const findChromiumSnapshotRevision = async (version: number | string) => {
     return res;
   };
 
-  while (tries < maxTries) {
+  while (attempts < CHROMIUM_FIND_REVISION_MAX_ATTMEPTS) {
     const res = await makeRequest(revision);
     if (res.status === 200) {
       return revision;
     }
     revision++;
-    tries++;
+    attempts++;
   }
 
-  tries = 0;
-  while (tries < maxTries) {
+  attempts = 0;
+  while (attempts < CHROMIUM_FIND_REVISION_MAX_ATTMEPTS) {
     const res = await makeRequest(revision);
     if (res.status === 200) {
       return revision;
     }
     revision--;
-    tries++;
+    attempts++;
   }
 
   throw new Error(`Could not find revision for version ${version}`);
@@ -475,7 +336,7 @@ const displayedVersions = computed(() => {
           class="relative z-10"
         >
           <el-option
-            v-for="item in PLATFORMS"
+            v-for="item in platformOptions"
             :key="item.value"
             :label="item.label"
             :value="item.value"
@@ -488,7 +349,7 @@ const displayedVersions = computed(() => {
           class="relative z-10"
         >
           <el-option
-            v-for="item in BROWSER_OPTIONS"
+            v-for="item in browserOptions"
             :key="item.value"
             :label="item.label"
             :value="item.value"
