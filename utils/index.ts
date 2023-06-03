@@ -1,4 +1,4 @@
-import { PLATFORMS } from "./constants";
+import { PLATFORM_OPTIONS } from "./constants";
 import { Detector } from "detector-js";
 
 export const ucfirst = (str: string | undefined) =>
@@ -21,7 +21,7 @@ export const $fetchWithCache = async <T>(url: string) => {
   return result;
 };
 
-export const getCurrentPlatform = () => {
+export const getCurrentPlatform = (): (typeof PLATFORMS)[number] => {
   const detector = new Detector();
 
   const osName = (detector.os as any).name.toLocaleLowerCase();
@@ -40,5 +40,5 @@ export const getCurrentPlatform = () => {
       : "mac-arm";
   }
 
-  return PLATFORMS[0].value;
+  return PLATFORMS[0];
 };

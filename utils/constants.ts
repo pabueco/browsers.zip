@@ -15,7 +15,8 @@ export const FIREFOX_CHANNELS = [
   value: b.toLocaleLowerCase(),
 }));
 
-export const PLATFORMS = [
+export const PLATFORMS = ["windows", "mac", "mac-arm", "linux"] as const;
+export const PLATFORM_OPTIONS = [
   {
     label: "Windows",
     value: "windows",

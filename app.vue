@@ -35,8 +35,8 @@ const selectedBrowser = computed(() => {
 });
 const browserOptions = computed(() => BROWSER_OPTIONS);
 
-const platform = ref(getCurrentPlatform());
-const platformOptions = computed(() => PLATFORMS);
+const platform = ref<(typeof PLATFORMS)[number]>(getCurrentPlatform());
+const platformOptions = computed(() => PLATFORM_OPTIONS);
 
 const versions = ref<Version[]>([]);
 const version = ref<Version["value"]>();
@@ -235,6 +235,24 @@ const findChromiumSnapshotRevision = async (version: number | string) => {
   throw new Error(`Could not find revision for version ${version}`);
 };
 
+const makeFirefoxFileName = ({
+  version,
+  platform,
+}: {
+  version: string;
+  platform: string;
+}) => {
+  switch (platform) {
+    case "windows":
+      return `Firefox Setup ${version}.exe`;
+    case "mac":
+    case "mac-arm":
+      return `Firefox ${version}.dmg`;
+    case "linux":
+      return `firefox-${version}.tar.bz2`;
+  }
+};
+
 const lookup = async () => {
   isLookingUp.value = true;
   showResult.value = false;
@@ -269,7 +287,7 @@ const lookup = async () => {
         version.value
       }/${FIREFOX_PLATFORM_DIRNAME[platform.value]}/${
         languages.value[0] ?? "en-US"
-      }/`;
+      }`;
 
       // Older versions don't have win64 builds
       const { ok } = await $fetch<{ ok: boolean }>("/api/ok", {
@@ -283,11 +301,14 @@ const lookup = async () => {
         url = url.replace("win64", "win32");
       }
 
-      const downloadUrl = `${url}Firefox Setup ${version.value}.exe`;
+      const downloadUrl = `${url}/${makeFirefoxFileName({
+        version: version.value,
+        platform: platform.value,
+      })}`;
 
       result.value = {
         revision: version.value,
-        directoryUrl: url,
+        directoryUrl: `${url}/`,
         downloadUrl,
       };
       break;

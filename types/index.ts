@@ -15,7 +15,7 @@ export type ChromiumRelease = {
   chromium_main_branch_position: number;
   hashes: Record<string, string>;
   milestone: number;
-  platform: (typeof PLATFORMS)[number]["value"];
+  platform: (typeof PLATFORMS)[number];
   time: number;
   version: string;
   previous_version: string;
