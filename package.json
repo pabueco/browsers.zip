@@ -9,18 +9,18 @@
     "postinstall": "nuxt prepare"
   },
   "devDependencies": {
-    "@element-plus/nuxt": "^1.0.4",
-    "@nuxtjs/tailwindcss": "^6.6.8",
-    "@types/node": "^18",
+    "@element-plus/nuxt": "^1.0.5",
+    "@nuxtjs/tailwindcss": "^6.7.0",
+    "@types/node": "^18.16.16",
     "@vueuse/core": "^10.1.2",
     "@vueuse/nuxt": "^10.1.2",
-    "element-plus": "^2.3.4",
-    "nuxt": "^3.4.3"
+    "element-plus": "^2.3.6",
+    "nuxt": "^3.5.2"
   },
   "dependencies": {
     "compare-versions": "6.0.0-rc.1",
-    "dayjs": "^1.11.7",
-    "detector-js": "^2.0.3",
+    "dayjs": "^1.11.8",
+    "detector-js": "^2.0.11",
     "lodash-es": "^4.17.21",
     "sass": "^1.62.1"
   }
