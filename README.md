@@ -1,19 +1,12 @@
-# Nuxt 3 Minimal Starter
+# browsers.zip
 
-Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+This is a tool to easily download any version of chromium or firefox directly from the source.
 
 ## Setup
 
 Make sure to install the dependencies:
 
 ```bash
-# yarn
-yarn install
-
-# npm
-npm install
-
-# pnpm
 pnpm install
 ```
 
