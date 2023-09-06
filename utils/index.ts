@@ -1,4 +1,3 @@
-import { PLATFORM_OPTIONS } from "./constants";
 import { Detector } from "detector-js";
 
 export const ucfirst = (str: string | undefined) =>
