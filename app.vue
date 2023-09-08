@@ -424,7 +424,7 @@ const displayedVersions = computed(() => {
             :disabled="!browser || !channel || !platform || !version"
             :loading="isLookingUp"
           >
-            Lookup
+            Get download link
           </el-button>
         </div>
       </div>
