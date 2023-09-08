@@ -393,7 +393,7 @@ const displayedVersions = computed(() => {
 
         <el-select
           v-model="version"
-          placeholder="Select version"
+          :placeholder="isFetchingVersions ? 'Loading...' : 'Select version'"
           size="large"
           :loading="isFetchingVersions"
           filterable
