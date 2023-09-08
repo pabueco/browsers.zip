@@ -339,7 +339,7 @@ const displayedVersions = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-950 flex items-center">
+  <div class="min-h-screen bg-gray-950 flex items-center relative">
     <div class="mx-auto max-w-lg w-full py-20 px-5">
       <div class="mb-8">
         <h1 class="font-bold text-3xl text-left mb-2">Browser Download Tool</h1>
@@ -487,6 +487,25 @@ const displayedVersions = computed(() => {
       >
         Loading versions. This can take a few seconds...
       </div>
+    </div>
+
+    <div
+      class="absolute bottom-10 text-sm text-gray-500 inset-x-0 flex justify-center items-center gap-1"
+    >
+      <span>by</span>
+      <a
+        href="https://pabue.co"
+        target="_blank"
+        class="text-gray-400 hover:text-primary-500 transition"
+        >pabueco</a
+      >
+      <span>on</span>
+      <a
+        href="https://github.com/pabueco/browsers.zip"
+        target="_blank"
+        class="text-gray-400 hover:text-primary-500 transition"
+        >github</a
+      >
     </div>
   </div>
 </template>
