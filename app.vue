@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { groupBy, last, mapValues, uniqBy } from "lodash-es";
+import { groupBy, last, mapValues, uniqBy } from "es-toolkit";
 import dayjs from "dayjs";
 import "./assets/index.scss";
-import { Version, FirefoxRelease, ChromiumRelease } from "./types";
+import type { Version, FirefoxRelease, ChromiumRelease } from "./types";
 
 const CHROMIUM_FETCH_RELEASES_COUNT = 250;
 const CHROMIUM_FIND_REVISION_MAX_ATTMEPTS = 150;
@@ -65,9 +65,7 @@ watch(version, () => {
   showResult.value = false;
 });
 
-watch(
-  [browser, channel, platform],
-  async () => {
+watch([browser, channel, platform], async () => {
     isFetchingVersions.value = true;
     showResult.value = false;
 
@@ -86,11 +84,7 @@ watch(
     version.value = versions.value[0].value;
 
     isFetchingVersions.value = false;
-  },
-  {
-    // immediate: true
-  }
-);
+});
 
 let firefoxReleases: {
   [key: string]: FirefoxRelease[];
@@ -106,7 +100,7 @@ const fetchFirefoxReleases = async (): Promise<Version[]> => {
     const byCatByVersion = mapValues(
       groupBy(
         Object.values(releases).filter((item) => item.product === "firefox"),
-        "category"
+        (item) => item.category
       ),
       (items) =>
         mapValues(
@@ -180,7 +174,7 @@ const fetchChromiumReleases = async (): Promise<Version[]> => {
         fullVersion: v.version,
       }))
       .filter((v) => !!v.value),
-    "value"
+    (item) => item.value
   );
 };
 
