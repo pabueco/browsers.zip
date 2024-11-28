@@ -5,7 +5,7 @@ import "./assets/index.scss";
 import { Version, FirefoxRelease, ChromiumRelease } from "./types";
 
 const CHROMIUM_FETCH_RELEASES_COUNT = 250;
-const CHROMIUM_FIND_REVISION_MAX_ATTMEPTS = 50;
+const CHROMIUM_FIND_REVISION_MAX_ATTMEPTS = 150;
 
 useHead({
   title: "Browser Download Tool",
@@ -200,8 +200,6 @@ const buildChromiumLinks = (revision: number) => {
 
 const findChromiumSnapshotRevision = async (version: number | string) => {
   const startRevision = Number(version);
-  let revision = startRevision;
-  let attempts = 0;
 
   const makeRequest = async (revision: number) => {
     const checkUrl = `https://www.googleapis.com/storage/v1/b/chromium-browser-snapshots/o/${
@@ -213,23 +211,38 @@ const findChromiumSnapshotRevision = async (version: number | string) => {
     return res;
   };
 
-  while (attempts < CHROMIUM_FIND_REVISION_MAX_ATTMEPTS) {
+  const searchRevision = async (
+    direction: "past" | "future",
+    abortSignal: AbortSignal
+  ) => {
+    let attempts = 0;
+    let revision = startRevision;
+
+    while (
+      attempts < CHROMIUM_FIND_REVISION_MAX_ATTMEPTS &&
+      !abortSignal.aborted
+    ) {
     const res = await makeRequest(revision);
     if (res.status === 200) {
       return revision;
     }
-    revision++;
+      revision += direction === "past" ? -1 : 1;
     attempts++;
   }
+  };
 
-  attempts = 0;
-  while (attempts < CHROMIUM_FIND_REVISION_MAX_ATTMEPTS) {
-    const res = await makeRequest(revision);
-    if (res.status === 200) {
+  const abortController = new AbortController();
+  const abortSignal = abortController.signal;
+
+  const revision = await Promise.any([
+    searchRevision("past", abortSignal),
+    searchRevision("future", abortSignal),
+  ]);
+
+  abortController.abort();
+
+  if (revision) {
       return revision;
-    }
-    revision--;
-    attempts++;
   }
 
   throw new Error(`Could not find revision for version ${version}`);
