@@ -66,24 +66,24 @@ watch(version, () => {
 });
 
 watch([browser, channel, platform], async () => {
-    isFetchingVersions.value = true;
-    showResult.value = false;
+  isFetchingVersions.value = true;
+  showResult.value = false;
 
-    version.value = undefined;
-    versions.value = [];
+  version.value = undefined;
+  versions.value = [];
 
-    if (!browser.value) return;
+  if (!browser.value) return;
 
-    const action = {
-      chromium: async () => await fetchChromiumReleases(),
-      firefox: async () => await fetchFirefoxReleases(),
-    }[browser.value];
+  const action = {
+    chromium: async () => await fetchChromiumReleases(),
+    firefox: async () => await fetchFirefoxReleases(),
+  }[browser.value];
 
-    versions.value = await action();
+  versions.value = await action();
 
-    version.value = versions.value[0].value;
+  version.value = versions.value[0].value;
 
-    isFetchingVersions.value = false;
+  isFetchingVersions.value = false;
 });
 
 let firefoxReleases: {
@@ -216,13 +216,13 @@ const findChromiumSnapshotRevision = async (version: number | string) => {
       attempts < CHROMIUM_FIND_REVISION_MAX_ATTMEPTS &&
       !abortSignal.aborted
     ) {
-    const res = await makeRequest(revision);
-    if (res.status === 200) {
-      return revision;
-    }
+      const res = await makeRequest(revision);
+      if (res.status === 200) {
+        return revision;
+      }
       revision += direction === "past" ? -1 : 1;
-    attempts++;
-  }
+      attempts++;
+    }
   };
 
   const abortController = new AbortController();
@@ -236,7 +236,7 @@ const findChromiumSnapshotRevision = async (version: number | string) => {
   abortController.abort();
 
   if (revision) {
-      return revision;
+    return revision;
   }
 
   throw new Error(`Could not find revision for version ${version}`);
@@ -490,9 +490,18 @@ const displayedVersions = computed(() => {
 
       <div
         :class="{ 'opacity-0': !isFetchingVersions }"
-        class="text-xs text-gray-500 col-span-2 mt-2 transition duration-200"
+        class="text-xs text-gray-500 col-span-2 mt-2 transition duration-200 flex items-center gap-2"
       >
-        Loading versions. This can take a few seconds...
+        <el-icon :size="16" class="animate-spin-slow">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+            <path
+              fill="currentColor"
+              d="M512 64a32 32 0 0 1 32 32v192a32 32 0 0 1-64 0V96a32 32 0 0 1 32-32m0 640a32 32 0 0 1 32 32v192a32 32 0 1 1-64 0V736a32 32 0 0 1 32-32m448-192a32 32 0 0 1-32 32H736a32 32 0 1 1 0-64h192a32 32 0 0 1 32 32m-640 0a32 32 0 0 1-32 32H96a32 32 0 0 1 0-64h192a32 32 0 0 1 32 32M195.2 195.2a32 32 0 0 1 45.248 0L376.32 331.008a32 32 0 0 1-45.248 45.248L195.2 240.448a32 32 0 0 1 0-45.248zm452.544 452.544a32 32 0 0 1 45.248 0L828.8 783.552a32 32 0 0 1-45.248 45.248L647.744 692.992a32 32 0 0 1 0-45.248zM828.8 195.264a32 32 0 0 1 0 45.184L692.992 376.32a32 32 0 0 1-45.248-45.248l135.808-135.808a32 32 0 0 1 45.248 0m-452.544 452.48a32 32 0 0 1 0 45.248L240.448 828.8a32 32 0 0 1-45.248-45.248l135.808-135.808a32 32 0 0 1 45.248 0z"
+            ></path>
+          </svg>
+        </el-icon>
+
+        <span>Loading versions. This can take a few seconds...</span>
       </div>
     </div>
 

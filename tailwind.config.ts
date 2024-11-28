@@ -11,7 +11,11 @@ export default {
 
       fontFamily: {
         mono: ["JetBrains Mono", ...defaultTheme.fontFamily.mono],
-      }
+      },
+
+      animation: {
+        "spin-slow": "spin 2s linear infinite",
+      },
     },
   },
 };
