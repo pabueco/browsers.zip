@@ -1,7 +1,12 @@
-export const CHROMIUM_CHANNELS = ["Stable", "Beta", "Dev", "Canary"].map(
+import {
+  CHROMIUM_CHANNELS as chromiumChannels,
+  CHROMIUM_PLATFORMS,
+} from "~~/shared/chromium";
+
+export const CHROMIUM_CHANNELS = chromiumChannels.map(
   (b) => ({
-    label: b,
-    value: b.toLocaleLowerCase(),
+    label: b.charAt(0).toUpperCase() + b.slice(1),
+    value: b,
   })
 );
 
@@ -15,7 +20,7 @@ export const FIREFOX_CHANNELS = [
   value: b.toLocaleLowerCase(),
 }));
 
-export const PLATFORMS = ["windows", "mac", "mac-arm", "linux"] as const;
+export const PLATFORMS = CHROMIUM_PLATFORMS;
 export const PLATFORM_OPTIONS = [
   {
     label: "Windows",
@@ -41,33 +46,9 @@ export const PLATFORM_OPTIONS = [
 
 export const BROWSERS = ["chromium", "firefox"] as const;
 export const BROWSER_OPTIONS = BROWSERS.map((b) => ({
-  label: ucfirst(b),
+  label: b.charAt(0).toUpperCase() + b.slice(1),
   value: b,
 }));
-
-export const CHROMIUM_PLATFORM_API_NAME: Record<string, string> = {
-  mac: "Mac",
-  "mac-arm": "Mac",
-  windows: "Windows",
-  linux: "Linux",
-  android: "Android",
-};
-
-export const CHROMIUM_PLATFORM_DIRNAME: Record<string, string> = {
-  mac: "Mac",
-  "mac-arm": "Mac_Arm",
-  windows: "Win_x64",
-  linux: "Linux_x64",
-  // android: "Android",
-};
-
-export const CHROMIUM_PLATFORM_FILENAME: Record<string, string> = {
-  mac: "chrome-mac.zip",
-  "mac-arm": "chrome-mac.zip",
-  windows: "chrome-win.zip",
-  linux: "chrome-linux.zip",
-  // android: "chrome-android.zip",
-};
 
 export const FIREFOX_PLATFORM_DIRNAME: Record<string, string> = {
   mac: "mac",

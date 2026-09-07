@@ -1,11 +1,12 @@
 <script lang="ts" setup>
-import { groupBy, last, mapValues, uniqBy } from "es-toolkit";
+import { groupBy, last, mapValues } from "es-toolkit";
 import dayjs from "dayjs";
 import "./assets/index.scss";
-import type { Version, FirefoxRelease, ChromiumRelease } from "./types";
-
-const CHROMIUM_FETCH_RELEASES_COUNT = 250;
-const CHROMIUM_FIND_REVISION_MAX_ATTMEPTS = 150;
+import type { Version, FirefoxRelease } from "./types";
+import type {
+  ChromiumSnapshot,
+  ChromiumVersionsResponse,
+} from "~~/shared/chromium";
 
 useHead({
   title: "Browser Download Tool",
@@ -52,13 +53,13 @@ const channels = computed(() => {
   return browser.value === "chromium" ? CHROMIUM_CHANNELS : FIREFOX_CHANNELS;
 });
 
-const channel = ref(CHROMIUM_CHANNELS[0].value);
+const channel = ref<string>(CHROMIUM_CHANNELS[0]?.value ?? "stable");
 
 const isFetchingVersions = ref(false);
 const isLookingUp = ref(false);
 
 watch(browser, () => {
-  channel.value = channels.value[0].value;
+  channel.value = channels.value[0]?.value ?? "stable";
 });
 
 watch(version, () => {
@@ -72,23 +73,32 @@ watch([browser, channel, platform], async () => {
   version.value = undefined;
   versions.value = [];
 
-  if (!browser.value) return;
+  if (!browser.value) {
+    isFetchingVersions.value = false;
+    return;
+  }
 
-  const action = {
-    chromium: async () => await fetchChromiumReleases(),
-    firefox: async () => await fetchFirefoxReleases(),
-  }[browser.value];
+  try {
+    const action = {
+      chromium: async () => await fetchChromiumReleases(),
+      firefox: async () => await fetchFirefoxReleases(),
+    }[browser.value];
 
-  versions.value = await action();
+    versions.value = await action();
 
-  version.value = versions.value[0].value;
-
-  isFetchingVersions.value = false;
+    version.value = versions.value[0]?.value;
+  } catch (error) {
+    console.error("Failed to load browser versions", error);
+    ElMessage({
+      message: "Could not load browser versions. Please try again.",
+      type: "error",
+    });
+  } finally {
+    isFetchingVersions.value = false;
+  }
 });
 
-let firefoxReleases: {
-  [key: string]: FirefoxRelease[];
-};
+let firefoxReleases: Record<string, FirefoxRelease[]> | undefined;
 const fetchFirefoxReleases = async (): Promise<Version[]> => {
   let data = firefoxReleases;
 
@@ -100,11 +110,11 @@ const fetchFirefoxReleases = async (): Promise<Version[]> => {
     const byCatByVersion = mapValues(
       groupBy(
         Object.values(releases).filter((item) => item.product === "firefox"),
-        (item) => item.category
+        (item) => item.category,
       ),
       (items) =>
         mapValues(
-          groupBy(items, (x) => x.version.split(".")[0]),
+          groupBy(items, (x) => x.version.split(".", 1)[0] ?? x.version),
           (values: any) => {
             return last(
               values.sort((a: any, b: any) => {
@@ -112,23 +122,23 @@ const fetchFirefoxReleases = async (): Promise<Version[]> => {
                   numeric: true,
                   sensitivity: "base",
                 });
-              })
+              }),
             );
-          }
-        )
+          },
+        ),
     ) as Record<string, Record<string, FirefoxRelease>>;
 
     data = {
-      stable: Object.values(byCatByVersion.stability),
-      dev: Object.values(byCatByVersion.dev),
-      esr: Object.values(byCatByVersion.esr),
+      stable: Object.values(byCatByVersion.stability ?? {}),
+      dev: Object.values(byCatByVersion.dev ?? {}),
+      esr: Object.values(byCatByVersion.esr ?? {}),
     };
     firefoxReleases = data;
   }
 
-  return data[channel.value as any]
-    ?.map((item) => ({
-      label: item.version.split(".")[0],
+  return (data[channel.value] ?? [])
+    .map((item) => ({
+      label: item.version.split(".", 1)[0] ?? item.version,
       value: item.version,
       date: dayjs(item.date),
       fullVersion: item.version,
@@ -136,110 +146,18 @@ const fetchFirefoxReleases = async (): Promise<Version[]> => {
     .reverse();
 };
 
-let chromiumMilestones: {
-  milestone: number;
-  chromium_main_branch_position: number;
-}[] = [];
 const fetchChromiumReleases = async (): Promise<Version[]> => {
-  const data = {
-    browser: ucfirst(browser.value),
-    channel: ucfirst(channel.value),
-    platform: CHROMIUM_PLATFORM_API_NAME[platform.value],
-  };
-
-  version.value = undefined;
-  versions.value = [];
-
-  if (!chromiumMilestones.length) {
-    chromiumMilestones = await $fetchWithCache(
-      "https://chromiumdash.appspot.com/fetch_milestones?only_branched=true"
-    );
-  }
-
-  const responseData = await $fetchWithCache<ChromiumRelease[]>(
-    `https://chromiumdash.appspot.com/fetch_releases?channel=${data.channel}&platform=${data.platform}&num=${CHROMIUM_FETCH_RELEASES_COUNT}`
+  const response = await $fetch<ChromiumVersionsResponse>(
+    `/api/chromium/versions/${platform.value}/${channel.value}`,
   );
 
-  return uniqBy(
-    responseData
-      .map((v) => ({
-        label: v.milestone.toString(),
-        value:
-          v.chromium_main_branch_position?.toString() ||
-          chromiumMilestones
-            .find((m) => m.milestone === v.milestone)
-            ?.chromium_main_branch_position?.toString() ||
-          "",
-        date: dayjs.unix(v.time / 1000),
-        fullVersion: v.version,
-      }))
-      .filter((v) => !!v.value),
-    (item) => item.value
-  );
-};
-
-const buildChromiumLinks = (revision: number) => {
-  let platformFormatted = CHROMIUM_PLATFORM_DIRNAME[platform.value];
-  const base = `https://commondatastorage.googleapis.com/chromium-browser-snapshots/index.html?prefix=${platformFormatted}/${revision}/`;
-
-  const downloadUrl = `https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/${platformFormatted}%2F${revision}%2F${
-    CHROMIUM_PLATFORM_FILENAME[platform.value]
-  }?alt=media`;
-
-  return {
-    directoryUrl: base,
-    downloadUrl,
-  };
-};
-
-const findChromiumSnapshotRevision = async (version: number | string) => {
-  const startRevision = Number(version);
-
-  const makeRequest = async (revision: number) => {
-    const checkUrl = `https://www.googleapis.com/storage/v1/b/chromium-browser-snapshots/o/${
-      CHROMIUM_PLATFORM_DIRNAME[platform.value]
-    }%2F${revision}%2F${CHROMIUM_PLATFORM_FILENAME[platform.value]}`;
-    const res = await fetch(checkUrl, {
-      method: "HEAD",
-    });
-    return res;
-  };
-
-  const searchRevision = async (
-    direction: "past" | "future",
-    abortSignal: AbortSignal
-  ) => {
-    let attempts = 0;
-    let revision = startRevision;
-
-    while (
-      attempts < CHROMIUM_FIND_REVISION_MAX_ATTMEPTS &&
-      !abortSignal.aborted
-    ) {
-      const res = await makeRequest(revision);
-      if (res.status === 200) {
-        return revision;
-      }
-      revision += direction === "past" ? -1 : 1;
-      attempts++;
-    }
-  };
-
-  const abortController = new AbortController();
-  const abortSignal = abortController.signal;
-
-  const revision = await Promise.any([
-    searchRevision("past", abortSignal),
-    searchRevision("future", abortSignal),
-  ]);
-
-  abortController.abort();
-
-  if (revision) {
-    return revision;
-  }
-
-  throw new Error(`Could not find revision for version ${version}`);
+  return response.versions.map((item) => ({
+    label: item.milestone.toString(),
+    value: item.milestone.toString(),
+    date: dayjs(item.releaseDate),
+    fullVersion: item.releaseVersion,
+    branchPosition: item.branchPosition,
+  }));
 };
 
 const makeFirefoxFileName = ({
@@ -270,17 +188,25 @@ const lookup = async () => {
       message: "Please select a version.",
       type: "error",
     });
+    isLookingUp.value = false;
     return;
   }
 
   switch (browser.value) {
     case "chromium":
       try {
-        const revision = await findChromiumSnapshotRevision(version.value);
-        const links = buildChromiumLinks(revision);
+        const branchPosition = selectedVersion.value?.branchPosition;
+        if (!branchPosition) {
+          throw new Error("Selected Chromium version has no branch position");
+        }
+
+        const snapshot = await $fetch<ChromiumSnapshot>(
+          `/api/chromium/snapshot/${platform.value}/${branchPosition}`,
+        );
         result.value = {
-          revision,
-          ...links,
+          revision: snapshot.revision,
+          directoryUrl: snapshot.directoryUrl,
+          downloadUrl: snapshot.downloadUrl,
         };
       } catch (error) {
         ElMessage({
@@ -334,11 +260,13 @@ const lookup = async () => {
 };
 
 const showResult = ref(false);
-const result = ref<any>({
-  revision: "",
-  directoryUrl: "",
-  downloadUrl: "",
-});
+type DownloadResult = {
+  revision: number | string;
+  directoryUrl: string;
+  downloadUrl: string;
+};
+
+const result = ref<DownloadResult | null>(null);
 
 const displayedVersions = computed(() => {
   return versions.value;
@@ -407,8 +335,8 @@ const displayedVersions = computed(() => {
           :disabled="isFetchingVersions || !browser"
         >
           <el-option
-            v-for="(item, i) in displayedVersions"
-            :key="i"
+            v-for="item in displayedVersions"
+            :key="item.value"
             :label="`${item.label} (${item.date
               .toDate()
               .toLocaleDateString()})`"
@@ -437,7 +365,7 @@ const displayedVersions = computed(() => {
       </div>
 
       <el-collapse-transition>
-        <div v-if="showResult">
+        <div v-if="showResult && result">
           <div
             class="w-full rounded-xl border border-primary-600 p-8 bg-gradient-to-br from-primary-600/[0.15] to-primary-600/[0.01]"
           >
@@ -449,6 +377,13 @@ const displayedVersions = computed(() => {
                 <p class="opacity-50 text-sm mt-1">
                   Release:
                   {{ selectedVersion?.date.toDate().toLocaleDateString() }}
+                </p>
+                <p
+                  v-if="browser === 'chromium'"
+                  class="opacity-50 text-xs mt-2"
+                >
+                  Archived snapshot {{ result.revision }} near this release's
+                  branch point.
                 </p>
               </div>
 
@@ -484,6 +419,24 @@ const displayedVersions = computed(() => {
                 </div>
               </div>
             </div>
+          </div>
+
+          <div class="mt-4">
+            <el-alert type="warning" :closable="false" show-icon>
+              <template #title>
+                <span class="font-semibold text-base"
+                  >Old browser versions are unsafe!</span
+                >
+              </template>
+              <template #default>
+                <p class="text-xs">
+                  They contain known security vulnerabilities. <br />
+                  Run them only in a sandboxed or isolated environment.
+                  <br />Never run them unsandboxed on your primary system or use
+                  them with sensitive data.
+                </p>
+              </template>
+            </el-alert>
           </div>
         </div>
       </el-collapse-transition>

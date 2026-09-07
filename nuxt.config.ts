@@ -9,11 +9,23 @@ export default defineNuxtConfig({
 
   ssr: false,
 
+  routeRules: {
+    "/api/chromium/versions/**": { isr: 21_600 },
+    "/api/chromium/snapshot/**": { isr: 2_592_000 },
+  },
+
+  typescript: {
+    tsConfig: {
+      compilerOptions: {
+        types: ["element-plus/global"],
+      },
+    },
+  },
+
   vite: {
     css: {
       preprocessorOptions: {
         scss: {
-          api: "modern-compiler",
           additionalData: `@use "@/assets/element.scss" as element;`,
         },
       },

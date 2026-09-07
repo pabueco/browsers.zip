@@ -1,27 +1,37 @@
 {
   "name": "nuxt-app",
   "private": true,
+  "type": "module",
+  "engines": {
+    "node": "^22.19.0 || ^24.11.0 || >=26.0.0"
+  },
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
+    "generate:chromium-history": "node scripts/generate-chromium-history.ts",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
+    "test": "node --test ./**/*.test.ts",
+    "typecheck": "nuxt prepare && vue-tsc -b --noEmit",
     "postinstall": "nuxt prepare"
   },
   "devDependencies": {
-    "@element-plus/nuxt": "^1.1.0",
-    "@nuxtjs/tailwindcss": "^6.12.2",
-    "@types/node": "^22.10.1",
-    "@vueuse/core": "^12.0.0",
-    "@vueuse/nuxt": "^12.0.0",
-    "element-plus": "^2.8.8",
-    "nuxt": "^3.14.1592"
+    "@element-plus/nuxt": "^1.1.5",
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "@types/node": "^26.4.1",
+    "@vueuse/core": "^14.4.0",
+    "@vueuse/nuxt": "^14.4.0",
+    "element-plus": "^2.14.5",
+    "nuxt": "^4.5.2",
+    "typescript": "^6.0.3",
+    "vue-tsc": "^3.3.11"
   },
   "dependencies": {
     "compare-versions": "6.1.1",
-    "dayjs": "^1.11.13",
+    "dayjs": "^1.11.23",
     "detector-js": "^2.0.11",
-    "es-toolkit": "^1.27.0",
-    "sass": "^1.81.0"
-  }
+    "es-toolkit": "^1.52.0",
+    "sass": "^1.104.0"
+  },
+  "packageManager": "pnpm@12.3.4+sha512.961aa41fb077da3a04a441d9f8e15ebc0c96da8ef710b2eb67bf9ee7cb0610eabd48f1fd85f51cffe73846785fa0f87c56a3a872a1d893f8446741b5cce45457"
 }

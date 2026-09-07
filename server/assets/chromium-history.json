@@ -1,0 +1,275 @@
+{
+  "schemaVersion": 1,
+  "milestones": [
+    {
+      "milestone": 5,
+      "branchPosition": 44202,
+      "sourceVersion": "5.0.375.127"
+    },
+    {
+      "milestone": 6,
+      "branchPosition": 53024,
+      "sourceVersion": "6.0.472.63"
+    },
+    {
+      "milestone": 7,
+      "branchPosition": 58656,
+      "sourceVersion": "7.0.517.44"
+    },
+    {
+      "milestone": 8,
+      "branchPosition": 62947,
+      "sourceVersion": "8.0.552.237"
+    },
+    {
+      "milestone": 9,
+      "branchPosition": 67679,
+      "sourceVersion": "9.0.597.107"
+    },
+    {
+      "milestone": 10,
+      "branchPosition": 72316,
+      "sourceVersion": "10.0.648.205"
+    },
+    {
+      "milestone": 11,
+      "branchPosition": 77261,
+      "sourceVersion": "11.0.696.77"
+    },
+    {
+      "milestone": 12,
+      "branchPosition": 82248,
+      "sourceVersion": "12.0.742.122"
+    },
+    {
+      "milestone": 13,
+      "branchPosition": 87433,
+      "sourceVersion": "13.0.782.220"
+    },
+    {
+      "milestone": 14,
+      "branchPosition": 94025,
+      "sourceVersion": "14.0.835.202"
+    },
+    {
+      "milestone": 15,
+      "branchPosition": 104119,
+      "sourceVersion": "15.0.874.121"
+    },
+    {
+      "milestone": 16,
+      "branchPosition": 106036,
+      "sourceVersion": "16.0.912.77"
+    },
+    {
+      "milestone": 17,
+      "branchPosition": 113143,
+      "sourceVersion": "17.0.963.83"
+    },
+    {
+      "milestone": 18,
+      "branchPosition": 119867,
+      "sourceVersion": "18.0.1025.168"
+    },
+    {
+      "milestone": 19,
+      "branchPosition": 129376,
+      "sourceVersion": "19.0.1084.56"
+    },
+    {
+      "milestone": 20,
+      "branchPosition": 135598,
+      "sourceVersion": "20.0.1132.57"
+    },
+    {
+      "milestone": 21,
+      "branchPosition": 142910,
+      "sourceVersion": "21.0.1180.89"
+    },
+    {
+      "milestone": 22,
+      "branchPosition": 150285,
+      "sourceVersion": "22.0.1229.94"
+    },
+    {
+      "milestone": 23,
+      "branchPosition": 157509,
+      "sourceVersion": "23.0.1271.101"
+    },
+    {
+      "milestone": 24,
+      "branchPosition": 164863,
+      "sourceVersion": "24.0.1312.57"
+    },
+    {
+      "milestone": 25,
+      "branchPosition": 173683,
+      "sourceVersion": "25.0.1364.172"
+    },
+    {
+      "milestone": 26,
+      "branchPosition": 181864,
+      "sourceVersion": "26.0.1410.65"
+    },
+    {
+      "milestone": 27,
+      "branchPosition": 190564,
+      "sourceVersion": "27.0.1453.116"
+    },
+    {
+      "milestone": 28,
+      "branchPosition": 198577,
+      "sourceVersion": "28.0.1500.95"
+    },
+    {
+      "milestone": 29,
+      "branchPosition": 208345,
+      "sourceVersion": "29.0.1547.76"
+    },
+    {
+      "milestone": 30,
+      "branchPosition": 217147,
+      "sourceVersion": "30.0.1599.101"
+    },
+    {
+      "milestone": 31,
+      "branchPosition": 224845,
+      "sourceVersion": "31.0.1650.63"
+    },
+    {
+      "milestone": 32,
+      "branchPosition": 232870,
+      "sourceVersion": "32.0.1700.107"
+    },
+    {
+      "milestone": 33,
+      "branchPosition": 241107,
+      "sourceVersion": "33.0.1750.152"
+    },
+    {
+      "milestone": 34,
+      "branchPosition": 251904,
+      "sourceVersion": "34.0.1847.137"
+    },
+    {
+      "milestone": 35,
+      "branchPosition": 260298,
+      "sourceVersion": "35.0.1916.153"
+    },
+    {
+      "milestone": 36,
+      "branchPosition": 269467,
+      "sourceVersion": "36.0.1985.143"
+    },
+    {
+      "milestone": 37,
+      "branchPosition": 278856,
+      "sourceVersion": "37.0.2062.124"
+    },
+    {
+      "milestone": 38,
+      "branchPosition": 290040,
+      "sourceVersion": "38.0.2125.122"
+    },
+    {
+      "milestone": 39,
+      "branchPosition": 297060,
+      "sourceVersion": "39.0.2171.99"
+    },
+    {
+      "milestone": 40,
+      "branchPosition": 303346,
+      "sourceVersion": "40.0.2214.115"
+    },
+    {
+      "milestone": 41,
+      "branchPosition": 310958,
+      "sourceVersion": "41.0.2272.118"
+    },
+    {
+      "milestone": 42,
+      "branchPosition": 317474,
+      "sourceVersion": "42.0.2311.152"
+    },
+    {
+      "milestone": 43,
+      "branchPosition": 323860,
+      "sourceVersion": "43.0.2357.134"
+    },
+    {
+      "milestone": 44,
+      "branchPosition": 330231,
+      "sourceVersion": "44.0.2403.157"
+    },
+    {
+      "milestone": 45,
+      "branchPosition": 338390,
+      "sourceVersion": "45.0.2454.101"
+    },
+    {
+      "milestone": 46,
+      "branchPosition": 344925,
+      "sourceVersion": "46.0.2490.86"
+    },
+    {
+      "milestone": 47,
+      "branchPosition": 352221,
+      "sourceVersion": "47.0.2526.111"
+    },
+    {
+      "milestone": 48,
+      "branchPosition": 359700,
+      "sourceVersion": "48.0.2564.116"
+    },
+    {
+      "milestone": 49,
+      "branchPosition": 369907,
+      "sourceVersion": "49.0.2623.112"
+    },
+    {
+      "milestone": 50,
+      "branchPosition": 378081,
+      "sourceVersion": "50.0.2661.102"
+    },
+    {
+      "milestone": 51,
+      "branchPosition": 386251,
+      "sourceVersion": "51.0.2704.106"
+    },
+    {
+      "milestone": 52,
+      "branchPosition": 394939,
+      "sourceVersion": "52.0.2743.116"
+    },
+    {
+      "milestone": 53,
+      "branchPosition": 403382,
+      "sourceVersion": "53.0.2785.143"
+    },
+    {
+      "milestone": 54,
+      "branchPosition": 414607,
+      "sourceVersion": "54.0.2840.98"
+    },
+    {
+      "milestone": 55,
+      "branchPosition": 423768,
+      "sourceVersion": "55.0.2883.95"
+    },
+    {
+      "milestone": 56,
+      "branchPosition": 433059,
+      "sourceVersion": "56.0.2924.87"
+    },
+    {
+      "milestone": 57,
+      "branchPosition": 444943,
+      "sourceVersion": "57.0.2987.133"
+    },
+    {
+      "milestone": 58,
+      "branchPosition": 454471,
+      "sourceVersion": "58.0.3029.110"
+    }
+  ]
+}

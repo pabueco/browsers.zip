@@ -1,0 +1,9 @@
+shamefullyHoist: true
+strictPeerDependencies: false
+minimumReleaseAge: 4320
+minimumReleaseAgeStrict: true
+minimumReleaseAgeIgnoreMissingTime: false
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  vue-demi: true

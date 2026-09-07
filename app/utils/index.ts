@@ -1,4 +1,5 @@
 import { Detector } from "detector-js";
+import { PLATFORMS } from "./constants";
 
 export const ucfirst = (str: string | undefined) =>
   str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
